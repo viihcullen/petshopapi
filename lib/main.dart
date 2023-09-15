@@ -9,6 +9,7 @@ void main() async {
     options: const FirebaseOptions(
         apiKey: "AIzaSyB1MNNbIG_0TzonbHHTFfa7_pW234Ro78M",
         authDomain: "petshop-api-69dbb.firebaseapp.com",
+        databaseURL: "https://petshop-api-69dbb.firebaseio.com",
         projectId: "petshop-api-69dbb",
         storageBucket: "petshop-api-69dbb.appspot.com",
         messagingSenderId: "810263902241",
@@ -23,6 +24,7 @@ class PetShopApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'PetShop Purple',
       theme: ThemeData(
         primaryColor: Color.fromARGB(255, 156, 144, 230),

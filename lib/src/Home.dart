@@ -91,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 20,
                 ),
                 ElevatedButton(
-                  child: Text(action == 'create' ? 'Create' : 'Update'),
+                  child: Text(
+                    action == 'Salvar' ? 'Salvar' : 'Atualizar',
+                  ),
                   onPressed: () async {
                     final String? nome = _nomeController.text;
 
@@ -169,15 +171,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
 // Show a snackbar
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('You have successfully deleted a product')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('VOCÊ DELETOU O PRODUTO COM SUCESSO!!!')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
 // Using StreamBuilder to display all racao from Firestore in real-time
-
+      appBar: AppBar(
+        title: Text("PetShop Purple"),
+        backgroundColor: Color.fromARGB(255, 156, 144, 230),
+        centerTitle: true,
+      ),
       body: StreamBuilder(
         stream: _racao.snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> streamSnapshot) {
@@ -199,10 +205,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           IconButton(
                               icon: const Icon(Icons.edit),
+                              color: Color.fromARGB(255, 126, 111, 176),
                               onPressed: () =>
                                   _createOrUpdate(documentSnapshot)),
                           IconButton(
                               icon: const Icon(Icons.delete),
+                              color: Color.fromARGB(255, 74, 104, 190),
                               onPressed: () =>
                                   _deleteProduct(documentSnapshot.id)),
                         ],
@@ -235,6 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _createOrUpdate(),
         child: const Icon(Icons.add),
+        backgroundColor: Color.fromARGB(255, 156, 144, 230),
       ),
     );
   }
