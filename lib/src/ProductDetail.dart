@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 class ProductDetailPage extends StatelessWidget {
   final String nome;
   final double preco;
+  final String imageUrl;
 
-  ProductDetailPage({required this.nome, required this.preco});
+  ProductDetailPage(
+      {required this.nome, required this.preco, required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,7 @@ class ProductDetailPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Image.network(imageUrl),
             Text(
               'Nome do Produto: $nome',
               style: TextStyle(fontSize: 18),
