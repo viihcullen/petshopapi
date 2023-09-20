@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import 'ProductDetail.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,24 +22,24 @@ class _HomeScreenState extends State<HomeScreen> {
   final CollectionReference _racao =
       FirebaseFirestore.instance.collection('ração');
 
-  XFile? _imageFile; // Variável para armazenar a imagem selecionada
+  File? _imageFile; // Variável para armazenar a imagem selecionada
 
   Future<void> _pickImage(BuildContext context) async {
     final imagePicker = ImagePicker();
     final pickedFile = await imagePicker.pickImage(
-      source: ImageSource.gallery, // Ou ImageSource.camera para tirar uma foto
+      source: ImageSource.gallery,
     );
     setState(() {
-      _imageFile = pickedFile; // Armazena a imagem selecionada
+      _imageFile = File(pickedFile!.path); // Armazena a imagem selecionada
     });
   }
 
-  Future<String> _uploadImageToFirebaseStorage(XFile imageFile) async {
-    final storage = FirebaseStorage.instance;
+  Future<String> _uploadImageToFirebaseStorage(File imageFile) async {
+    final FirebaseStorage storage = FirebaseStorage.instance;
     final imageFileName = DateTime.now().millisecondsSinceEpoch.toString();
     final reference = storage.ref().child('images/$imageFileName.jpg');
 
-    final uploadTask = reference.putFile(File(imageFile.path));
+    final uploadTask = reference.putFile(imageFile);
     final snapshot = await uploadTask.whenComplete(() {});
 
     if (snapshot.state == TaskState.success) {
@@ -113,11 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       preco != null &&
                       sabor != null &&
                       caracteristicas != null) {
-                    final XFile? imageFile = await _pickImage(context);
-                    if (imageFile != null) {
+                    if (_imageFile != null) {
                       final imageUrl =
-                          await _uploadImageToFirebaseStorage(imageFile);
-
+                          await _uploadImageToFirebaseStorage(_imageFile!);
                       if (action == 'create') {
                         await _racao.add({
                           "nome": nome,
@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               ElevatedButton(
                 child: Text(
-                    'Pick Image'), // Adicione um botão para selecionar uma imagem
+                    'Importar imagem'), // Adicione um botão para selecionar uma imagem
                 onPressed: () async {
                   await _pickImage(context);
                 },
