@@ -22,22 +22,26 @@ class _HomeScreenState extends State<HomeScreen> {
   final CollectionReference _racao =
       FirebaseFirestore.instance.collection('ração');
 
-  File? _imageFile; // Variável para armazenar a imagem selecionada
+  File? _imageFile;
+  File? _Image;
+  String? _ImageUrl;
 
   Future<void> _pickImage(BuildContext context) async {
     final imagePicker = ImagePicker();
     final pickedFile = await imagePicker.pickImage(
       source: ImageSource.gallery,
     );
-    setState(() {
-      _imageFile = File(pickedFile!.path); // Armazena a imagem selecionada
-    });
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile!.path);
+      });
+    }
   }
 
   Future<String> _uploadImageToFirebaseStorage(File imageFile) async {
     final FirebaseStorage storage = FirebaseStorage.instance;
     final imageFileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final reference = storage.ref().child('images/$imageFileName.jpg');
+    final reference = storage.ref().child('produtos/$imageFileName.jpg');
 
     final uploadTask = reference.putFile(imageFile);
     final snapshot = await uploadTask.whenComplete(() {});
@@ -46,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final imageUrl = await snapshot.ref.getDownloadURL();
       return imageUrl;
     } else {
-      throw Exception("Failed to upload image");
+      throw Exception("Falha no upload da imagem");
     }
   }
 
@@ -61,6 +65,17 @@ class _HomeScreenState extends State<HomeScreen> {
       _precoController.text = documentSnapshot['preco'].toString();
       _saborController.text = documentSnapshot['sabor'];
       _caracteristicasController.text = documentSnapshot['caracteristicas'];
+
+      if (documentSnapshot['image_url'] != null) {
+        _ImageUrl = documentSnapshot['image_url'];
+      } else {
+        if (_Image != null) {
+          _ImageUrl = _Image!.path;
+        }
+      }
+    } else {
+      _Image = null;
+      _ImageUrl = null;
     }
 
     await showModalBottomSheet(
@@ -98,65 +113,77 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextField(
                 controller: _caracteristicasController,
-                decoration: const InputDecoration(labelText: 'Carcteristicas'),
+                decoration: const InputDecoration(labelText: 'Caracteristicas'),
               ),
-              ElevatedButton(
-                child: Text(action == 'create' ? 'Create' : 'Update'),
-                onPressed: () async {
-                  final String? nome = _nomeController.text;
-                  final String? marca = _marcaController.text;
-                  final String? preco = _precoController.text;
-                  final String? sabor = _saborController.text;
-                  final String? caracteristicas =
-                      _caracteristicasController.text;
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStatePropertyAll<Color>(
+                            Color.fromARGB(255, 156, 144, 230))),
+                    child: Text('Importar imagem'),
+                    onPressed: () async {
+                      await _pickImage(context);
+                    },
+                  ),
+                  ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStatePropertyAll<Color>(
+                            Color.fromARGB(255, 156, 144, 230))),
+                    child: Text(
+                      action == 'Salvar' ? 'Salvar' : 'Atualizar',
+                    ),
+                    onPressed: () async {
+                      final String? nome = _nomeController.text;
+                      final String? marca = _marcaController.text;
+                      final String? preco = _precoController.text;
+                      final String? sabor = _saborController.text;
+                      final String? caracteristicas =
+                          _caracteristicasController.text;
 
-                  if (nome != null &&
-                      marca != null &&
-                      preco != null &&
-                      sabor != null &&
-                      caracteristicas != null) {
-                    if (_imageFile != null) {
-                      final imageUrl =
-                          await _uploadImageToFirebaseStorage(_imageFile!);
-                      if (action == 'create') {
-                        await _racao.add({
-                          "nome": nome,
-                          "marca": marca,
-                          "preco": preco,
-                          "sabor": sabor,
-                          "caracteristicas": caracteristicas,
-                          "image_url": imageUrl,
-                        });
+                      if (nome != null &&
+                          marca != null &&
+                          preco != null &&
+                          sabor != null &&
+                          caracteristicas != null) {
+                        if (_imageFile != null) {
+                          final imageUrl =
+                              await _uploadImageToFirebaseStorage(_imageFile!);
+                          if (action == 'create') {
+                            await _racao.add({
+                              "nome": nome,
+                              "marca": marca,
+                              "preco": preco,
+                              "sabor": sabor,
+                              "caracteristicas": caracteristicas,
+                              "image_url": imageUrl,
+                            });
+                          }
+
+                          if (action == 'update') {
+                            await _racao.doc(documentSnapshot!.id).update({
+                              "nome": nome,
+                              "marca": marca,
+                              "preco": preco,
+                              "sabor": sabor,
+                              "caracteristicas": caracteristicas,
+                              "image_url": imageUrl,
+                            });
+                          }
+
+                          _nomeController.text = '';
+                          _marcaController.text = '';
+                          _precoController.text = '';
+                          _saborController.text = '';
+                          _caracteristicasController.text = '';
+
+                          Navigator.of(context).pop();
+                        }
                       }
-
-                      if (action == 'update') {
-                        await _racao.doc(documentSnapshot!.id).update({
-                          "nome": nome,
-                          "marca": marca,
-                          "preco": preco,
-                          "sabor": sabor,
-                          "caracteristicas": caracteristicas,
-                          "image_url": imageUrl,
-                        });
-                      }
-
-                      _nomeController.text = '';
-                      _marcaController.text = '';
-                      _precoController.text = '';
-                      _saborController.text = '';
-                      _caracteristicasController.text = '';
-
-                      Navigator.of(context).pop();
-                    }
-                  }
-                },
-              ),
-              ElevatedButton(
-                child: Text(
-                    'Importar imagem'), // Adicione um botão para selecionar uma imagem
-                onPressed: () async {
-                  await _pickImage(context);
-                },
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -165,14 +192,42 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _deleteProduct(String productId) async {
-    await _racao.doc(productId).delete();
+  void _clearData() {
+    setState(() {
+      _nomeController.text = '';
+      _marcaController.text = '';
+      _precoController.text = '';
+      _saborController.text = '';
+      _caracteristicasController.text = '';
+      _Image = null;
+      _ImageUrl = null;
+    });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You have successfully deleted a product'),
-      ),
+  Future<void> _deleteProduct(String productId) async {
+    AlertDialog alert = AlertDialog(
+      title: Text("Delete"),
+      content: Text("Tem certeza que deseja me apagar?"),
+      actions: [
+        ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Cancelar")),
+        ElevatedButton(
+            onPressed: () async {
+              await _racao.doc(productId).delete();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('VOCÊ DELETOU O PRODUTO COM SUCESSO!!!'),
+                ),
+              );
+              Navigator.pop(context);
+            },
+            child: Text("Deletar")),
+      ],
     );
+    showDialog(context: context, builder: (BuildContext context) => alert);
   }
 
   @override
@@ -217,6 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListTile(
         title: Text(documentSnapshot['nome']),
         subtitle: Text(documentSnapshot['preco'].toString()),
+        leading: Image.network(documentSnapshot['image_url']),
         trailing: SizedBox(
           width: 100,
           child: Row(
@@ -237,8 +293,13 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(
               builder: (context) => ProductDetailPage(
                 nome: documentSnapshot['nome'],
-                preco: documentSnapshot['preco'],
+                preco: double.parse(documentSnapshot['preco'] == ''
+                    ? '0'
+                    : documentSnapshot['preco']),
                 imageUrl: documentSnapshot['image_url'],
+                sabor: documentSnapshot['sabor'],
+                marca: documentSnapshot['marca'],
+                caracteristica: documentSnapshot['caracteristicas'],
               ),
             ),
           );

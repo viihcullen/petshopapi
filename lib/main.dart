@@ -23,6 +23,7 @@ class PetShopApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'PetShop Purple',
       theme: ThemeData(
         primaryColor: Color.fromARGB(255, 156, 144, 230),
